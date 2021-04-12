@@ -148,7 +148,7 @@ Customers purchase pasta before purchasing shrimp
 spaghetti_ruleset <- apriori(transactions, parameter = list(supp=0.001, conf=0.8), appearance = list(default="lhs", rhs="spaghetti"))
 plot(spaghetti_ruleset, method = 'graph', engine = 'htmlwidget')
 ```
-Items most bought before spaghetti are shrimp, salmon and ground beef.
+Items that are most bought before spaghetti are shrimp, salmon and ground beef.
 
 ### Summary of findings
 1. Mushroom cream sauce and pasta are most often bought together with escalope. Stocking pasta and mushroom cream sauce in the same section or next to each other could increase sales.
