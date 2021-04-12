@@ -1,0 +1,97 @@
+---
+title: "Dimensionality Reduction - IP"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(FactoMineR)
+library(tidyverse)
+library(factoextra)
+```
+
+```{r}
+# Load data
+sales = read.csv('Supermarket_Dataset_1_Sales_Data.csv')
+head(sales)
+```
+```{r}
+# Investigate gross margin percentage
+unique(sales$gross.margin.percentage)
+# Set gross margin percentage column
+sales$gross.margin.percentage <- NULL
+```
+
+```{r}
+str(sales)
+```
+```{r}
+# Check for equality of gross.income and tax
+all(sales$Tax == sales$gross.income)
+```
+```{r}
+# Set gross income to null
+sales$gross.income <- NULL
+```
+```{r}
+summary(sales[, -c(1,9,10)])
+```
+
+```{r}
+# Rearrange data columns
+sales.new <- sales[, c(2,3,4,5,11,6,7,8,12,14,13)]
+row.names(sales.new) <- sales$Invoice.ID
+# Perform PCA on qualitative variables
+pca <- prcomp(sales.new[, c(6:10)], scale = TRUE)
+```
+
+```{r}
+summary(pca)
+```
+
+```{r}
+# Visualize variances of each principal component
+fviz_eig(pca)
+```
+
+The first principal component explains over 65% variation in the dataset. 
+```{r}
+fviz_pca_var(pca,
+             col.var ="contrib", # Color by the quality of representation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+
+Total variable is a combination of tax and cogs variables. A large number of variables in the data are categorical, factor analysis on mixed data for these variables could be helpful.
+
+```{r}
+# Perform factor analysis
+famd <- FAMD(sales.new,ncp = 7, graph = F)
+```
+
+```{r}
+# eigen values for each dimension
+get_eigenvalue(famd)
+```
+
+```{r}
+fviz_eig(famd)
+```
+```{r}
+# Plot of variables
+fviz_famd_var(famd, repel = TRUE)
+# Contribution to the first dimension
+fviz_contrib(famd, "var", axes = 1)
+# Contribution to the second dimension
+fviz_contrib(famd, "var", axes = 2)
+```
+
+From the plots above, it can be seen that:
+
+- variables that contribute the most to the first dimension are: tax, cogs and total
+
+- variables that contribute the most to the second dimension are: gender, product line, payment

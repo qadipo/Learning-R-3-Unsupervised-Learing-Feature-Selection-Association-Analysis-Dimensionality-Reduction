@@ -1,0 +1,67 @@
+---
+title: "IP - Feature Selection"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Analysis Objectives
+Customer ratings on shopping experience is integral to the the sales that a supermarket makes. Predicting the cutomer rating would be helpful to the Carrefour marketing team in determing how consumers review their shopping experience and their sentiment on different product categories.
+
+```{r}
+library(caret)
+library(corrplot)
+# Load data
+sales.data <- read.csv('Supermarket_Dataset_1_Sales_Data.csv')
+head(sales.data)
+```
+```{r}
+# Set gross.margin percentage and gross income to null
+sales.data$gross.margin.percentage <- NULL
+sales.data$gross.income <- NULL
+```
+
+```{r}
+summary(sales.data[, c(2:8, 11:12)])
+```
+
+```{r}
+row.names(sales.data)<- sales.data$Invoice.ID
+sales.data$Invoice.ID <- NULL
+sales.data$Date <- NULL
+sales.data$Time <- NULL
+# Encode categorical variables
+sales.data$Customer.type <- ifelse(sales.data$Customer.type == 'Member', 1,0)
+sales.data$Gender <- ifelse(sales.data$Gender == 'Male', 1,0)
+dmy <- dummyVars(" ~ .", data = sales.data)
+sales_transformed <- data.frame(predict(dmy, newdata = sales.data))
+glimpse(sales_transformed)
+```
+
+```{r}
+# Calculating the correlation matrix
+# ---
+#
+correlationMatrix <- cor(sales_transformed)
+# Find attributes that are highly correlated
+# ---
+#
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff= 0.75)
+# Highly correlated attributes
+# ---
+# 
+highlyCorrelated
+names(sales_transformed[,highlyCorrelated])
+```
+Tax and cogs columns are highly correlated. cogs is the price before addition of tax while total is the addition of cogs and tax
+
+```{r}
+corrplot(correlationMatrix, type='upper', tl.cex=0.6, tl.col = 'black')
+```
+```{r}
+# Correlation plot after removal of cogs
+correlationMatrix2 <- cor(sales_transformed[,c(1:17, 19:20)])
+corrplot(correlationMatrix2, type='upper', tl.col = 'black', tl.cex = 0.6)
+```

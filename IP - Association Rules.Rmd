@@ -1,0 +1,156 @@
+---
+title: "IP - Association Rules"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Objective
+To perform Associative analysis on sales data to identify customer purchase behavior.
+
+### Context
+Carrefour Kenya, a mega retailer, seeks to identify the most relevant marketing strategies that will result in higher volume of sales.
+
+### Experimental Design
+
+- Business Understanding
+- Loading of Data
+- EDA
+- Implementation of the solution
+- Findings
+
+```{r}
+# Load the libraries
+library(arules)
+library(arulesViz)
+```
+```{r}
+# Load the data
+transactions <- read.transactions("Supermarket_Sales_Dataset II.csv", sep="," , header = FALSE)
+transactions
+```
+```{r}
+# Checking the transactions class
+class(transactions)
+```
+
+```{r}
+# Preview  first 5 transactions
+inspect(transactions[1:5])
+```
+```{r}
+# Number of unique items bought
+length(itemLabels(transactions))
+```
+This basket contains 119 unique items
+
+```{r}
+# Summary of the transactions
+summary(transactions)
+```
+Mineral Water, Eggs, Spaghetti, French Fries and Chocolate are the top 5 most purchased items
+
+```{r}
+# Plot the top 10 most frequently purchased items
+par(mfrow = c(1, 2))
+
+# plot the frequency of items
+itemFrequencyPlot(transactions, topN = 10,col="darkgreen")
+itemFrequencyPlot(transactions, support = 0.1,col="darkred")
+```
+Mineral water, eggs and spaghetti are the top 3 frequently purchased items. 
+
+```{r}
+# Plotting items with minimum support of 0.1
+itemFrequencyPlot(transactions, support = 0.1, col = "brown3")
+```
+
+
+```{r}
+# Support per item
+support <- sort(itemFrequency(transactions) * 100)
+
+# Percentage of items with a support less than 0.1%
+length(support[support < 0.1])/ 119 * 100
+
+# Percentage of items with a support less than 0.2%
+length(support[support < 0.2])/ 119 * 100
+```
+
+```{r}
+# Building Models based on association rules
+# Using minimum support of 0.001 and confidence of 0.8
+rules_set1 <- apriori(transactions, parameter = list(supp = 0.001, conf = 0.8, maxlen=10))
+
+# Using minimum support of 0.002 and confidence of 0.6
+rules_set2 <- apriori(transactions, parameter = list(supp = 0.002, conf = 0.6, maxlen=10))
+```
+
+```{r}
+# Viewing the Summary
+summary(rules_set1)
+```
+
+A minimum support and confidence of 0.001 and .8 respectively generate 74 rules
+
+```{r}
+summary(rules_set2)
+```
+A minimum support and confidence of 0.002 and .6 respectively generate 43 rules
+
+```{r}
+# Sort rules based on confidence
+inspect(sort(rules_set1, by="confidence", decreasing = T)[1:10])
+```
+```{r}
+# Visualize top 10 rules
+top10rules <- head(rules_set1, n = 10, by='confidence')
+plot(top10rules, method = "graph",  engine = "htmlwidget")
+```
+Mushroom cream sauce and pasta are most frequently bought before escalope.
+
+
+```{r}
+inspect(sort(rules_set2, by='confidence', decreasing = T)[1:10])
+```
+
+```{r}
+top10rules <- head(rules_set2, n=10, by='confidence')
+plot(top10rules, method = 'graph', engine = 'htmlwidget')
+```
+
+
+```{r}
+# Creating Shorter Association Rules
+shorter_ruleset <- apriori(transactions, parameter = list(supp = 0.001, conf = 0.8, maxlen=4))
+```
+```{r}
+inspect(sort(shorter_ruleset, by='confidence', decreasing = T)[1:20])
+```
+
+```{r}
+top10rules <- head(shorter_ruleset, n=10, by='confidence')
+plot(top10rules, method = 'graph', engine = 'htmlwidget')
+```
+```{r}
+# Get association rules associated to shrimp
+shrimp_ruleset <- apriori(transactions, parameter = list(supp=0.001, conf=0.8), appearance = list(default="lhs", rhs="shrimp"))
+```
+```{r}
+inspect(shrimp_ruleset)
+```
+Customers purchase pasta before purchasing shrimp
+
+```{r}
+# Get association rules associated to spaghetti
+spaghetti_ruleset <- apriori(transactions, parameter = list(supp=0.001, conf=0.8), appearance = list(default="lhs", rhs="spaghetti"))
+plot(spaghetti_ruleset, method = 'graph', engine = 'htmlwidget')
+```
+Items most bought before spaghetti are shrimp, salmon and ground beef.
+
+### Summary of findings
+1. Mushroom cream sauce and pasta are most often bought together with escalope. Stocking pasta and mushroom cream sauce in the same section or next to each other could increase sales.
+2. Shrimp, salmon and ground beef are most often bought before spaghetti, locating the meats section next to the pasta/spaghetti section could boost sales.
+3. Package deals of mushroom sauce and spaghetti together.
