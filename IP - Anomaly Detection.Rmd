@@ -1,7 +1,5 @@
 ---
 title: "IP - Anomaly Detection"
-author: "QA"
-date: "4/11/2021"
 output: html_document
 ---
 
@@ -9,22 +7,80 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+### Data Analysis Objectives
+Perform anomaly detection analysis on sales data and report any inconsistencies.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+### Understanding context
+Carrefour Kenya seeks to undertake a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Anomaly detection analysis on sales data would be helpful in identifying if there is occurrence of any fraudulent transactions and when they occured to perform further investigation. 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+### Experimental Design
 
-```{r cars}
-summary(cars)
+- Business Understanding
+- Loading Data
+- EDA
+- Implementation of the solution
+- Findings
+
+```{r}
+# Load packages
+library(tidyverse)
+library(anomalize)
+library(tibbletime)
+library(lubridate)
+```
+```{r}
+# Load data
+sales_data <- read.csv('Supermarket_Sales_Forecasting - Sales.csv', stringsAsFactors = FALSE)
+head(sales_data)
+```
+```{r}
+summary(sales_data$Sales)
+```
+```{r}
+# Convertieng date column into date object
+sales_data$Date <- as_date(mdy(sales_data$Date))
+```
+```{r}
+# Get the range of dates in the data
+paste(c('Start:'), min(sales_data$Date))
+paste(c('End:'), max(sales_data$Date))
+```
+Sales data ranges over a period of 3 months.
+```{r}
+# Visualize sales data
+ggplot(data = sales_data, aes(x=Date, y = Sales))+
+  geom_line(color = "#00AFBB", size = 1)+
+  stat_smooth(color = "#FC4E07", fill = "#FC4E07",
+  method = "loess")
+```
+```{r}
+# Get total sales and average sales made per day
+summary_sales <- sales_data %>% group_by(Date) %>% summarise_all(list(mean = mean, sum = sum))
+head(summary_sales,  3)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+# Anomaly detection using total sales per day
+summary_sales %>% 
+  as_tbl_time(Date) %>% 
+  time_decompose(sum) %>% 
+  anomalize(remainder) %>% 
+  time_recompose()%>%
+  plot_anomalies(time_recomposed = TRUE, ncol = 3, alpha_dots = 0.5)
 ```
+NO anomalies present in the data
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# Anomaly detection using average sales per day
+summary_sales %>% 
+  as_tbl_time(Date) %>% 
+  time_decompose(mean) %>% 
+  anomalize(remainder) %>% 
+  time_recompose()%>%
+  plot_anomalies(time_recomposed = TRUE, ncol = 3, alpha_dots = 0.5)
+```
+NO anomalies detected in the data
+
+### Summary of Findings.
+Analysis of the data indicates no fraudulent activity in the data
