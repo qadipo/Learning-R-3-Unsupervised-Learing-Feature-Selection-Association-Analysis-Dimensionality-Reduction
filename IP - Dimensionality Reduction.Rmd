@@ -18,46 +18,50 @@ library(factoextra)
 sales = read.csv('Supermarket_Dataset_1_Sales_Data.csv')
 head(sales)
 ```
+The Tax and gross.income columns have the same values
+
 ```{r}
-# Investigate gross margin percentage
-unique(sales$gross.margin.percentage)
-# Set gross margin percentage column
-sales$gross.margin.percentage <- NULL
+# Confirm the above claim
+all(sales$Tax == sales$gross.income)
 ```
+
+```{r}
+# Removing the income column
+sales <- sales[-c(14)]
+```
+
 
 ```{r}
 str(sales)
 ```
 ```{r}
-# Check for equality of gross.income and tax
-all(sales$Tax == sales$gross.income)
-```
-```{r}
-# Set gross income to null
-sales$gross.income <- NULL
-```
-```{r}
-summary(sales[, -c(1,9,10)])
+head(sales)
 ```
 
 ```{r}
-# Rearrange data columns
-sales.new <- sales[, c(2,3,4,5,11,6,7,8,12,14,13)]
-row.names(sales.new) <- sales$Invoice.ID
+summary(sales[, -c(1,9)])
+```
+
+```{r}
+# Reordering columns
+sales <- sales[, c(2,3,4,5,11,6,7,8,12,13)]
+row.names(sales) <- sales$Invoice.ID
+
 # Perform PCA on qualitative variables
-pca <- prcomp(sales.new[, c(6:10)], scale = TRUE)
+pca <- prcomp(sales[, c(6:10)], scale = TRUE)
 ```
 
 ```{r}
 summary(pca)
 ```
+PC1 explains 58.7% of the variance in the data
 
 ```{r}
 # Visualize variances of each principal component
 fviz_eig(pca)
 ```
 
-The first principal component explains over 65% variation in the dataset. 
+The first principal component explains over 58.7% variation in the dataset. 
 ```{r}
 fviz_pca_var(pca,
              col.var ="contrib", # Color by the quality of representation
@@ -65,9 +69,6 @@ fviz_pca_var(pca,
              repel = TRUE     # Avoid text overlapping
              )
 ```
-
-Total variable is a combination of tax and cogs variables. A large number of variables in the data are categorical, factor analysis on mixed data for these variables could be helpful.
-
 ```{r}
 # Perform factor analysis
 famd <- FAMD(sales.new,ncp = 7, graph = F)
@@ -82,16 +83,15 @@ get_eigenvalue(famd)
 fviz_eig(famd)
 ```
 ```{r}
-# Plot of variables
-fviz_famd_var(famd, repel = TRUE)
-# Contribution to the first dimension
+# Plotting the variables
+fviz_famd_var(famd, repel = TRUE) 
+
+# Contribution to the First Dimension
 fviz_contrib(famd, "var", axes = 1)
-# Contribution to the second dimension
+
+# Contribution to the Second Dimension
 fviz_contrib(famd, "var", axes = 2)
 ```
-
-From the plots above, it can be seen that:
-
-- variables that contribute the most to the first dimension are: tax, cogs and total
-
-- variables that contribute the most to the second dimension are: gender, product line, payment
+**Observations**
+1. Tax, cogs and Total contributes most to the First Dimension
+2. Gender, Product line, Payment and Branch contribute most to the Second Dimension
